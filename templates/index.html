@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIV Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f1f5;
+        }
+
+        .upload-section.dragover {
+            background: #e8eaf6;
+            border-color: #5e72e4;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .settings {
+            margin: 20px 0;
+        }
+
+        .settings label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .settings input {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .settings input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filename {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            color: #2e7d32;
+            font-weight: 600;
+        }
+
+        #progressSection {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        #resultsSection {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .results-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .results-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .plot-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .plot-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            margin-top: 20px;
+        }
+
+        .download-btn:hover {
+            box-shadow: 0 5px 15px rgba(56, 239, 125, 0.4);
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 PIV Analysis</h1>
+        <p class="subtitle">Upload your video for Particle Image Velocimetry analysis</p>
+
+        <div class="info-box">
+            <h3>How to use:</h3>
+            <ul>
+                <li>Upload a video file (MP4, AVI, or MOV format)</li>
+                <li>Preview the video and optionally clip it by setting start/end times</li>
+                <li>Optionally set maximum frames to process (leave empty for all frames)</li>
+                <li>Click "Process Video" to start PIV analysis with clipping, or "Process Full Video" to skip clipping</li>
+                <li>View the velocity field plots and download the results as a text file</li>
+            </ul>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <h3 style="color: #667eea; margin-bottom: 20px;">📹 Select Video File</h3>
+            
+            <form id="uploadForm">
+                <div class="file-input-wrapper">
+                    <button class="btn" type="button">Choose Video File</button>
+                    <input type="file" id="videoInput" name="video" accept=".mp4,.avi,.mov,.MOV,.MP4,.AVI" required>
+                </div>
+
+                <div id="selectedFile" class="filename" style="display: none;"></div>
+
+                <button type="submit" class="btn" id="uploadBtn" style="display: none;">
+                    📤 Upload Video
+                </button>
+            </form>
+        </div>
+
+        <div id="clipSection" style="display: none;">
+            <div class="upload-section">
+                <h3 style="color: #667eea; margin-bottom: 20px;">✂️ Clip Video (Optional)</h3>
+                
+                <div style="margin-bottom: 20px;">
+                    <video id="videoPreview" controls style="max-width: 100%; border-radius: 8px; background: #000;">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div style="text-align: center; margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 5px;">
+                        <strong>Current Position:</strong> <span id="currentTimeDisplay">0.00</span> seconds
+                    </div>
+                </div>
+
+                <div id="videoInfo" style="background: #f0f1f5; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <p><strong>Duration:</strong> <span id="videoDuration">0</span> seconds</p>
+                    <p><strong>Frame Count:</strong> <span id="videoFrames">0</span> frames</p>
+                    <p><strong>FPS:</strong> <span id="videoFPS">0</span></p>
+                </div>
+
+                <div class="settings">
+                    <label for="startTime">Start Time (seconds):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="number" id="startTime" name="start_time" min="0" step="0.1" value="0" placeholder="0" style="flex: 1;">
+                        <button type="button" class="btn" id="setStartBtn" style="padding: 8px 16px; font-size: 14px;">
+                            ⏯️ Use Current Frame
+                        </button>
+                    </div>
+                    
+                    <label for="endTime">End Time (seconds, leave empty for end):</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="number" id="endTime" name="end_time" min="0" step="0.1" placeholder="Leave empty for end of video" style="flex: 1;">
+                        <button type="button" class="btn" id="setEndBtn" style="padding: 8px 16px; font-size: 14px;">
+                            ⏯️ Use Current Frame
+                        </button>
+                    </div>
+                    
+                    <label for="maxFrames">Maximum Frames to Process (optional):</label>
+                    <input type="number" id="maxFrames" name="max_frames" min="2" placeholder="Leave empty to process all frames">
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        Processing fewer frames is faster but may be less accurate
+                    </small>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="btn" id="processBtn">
+                        🚀 Process Video
+                    </button>
+                    <button class="btn" id="skipClipBtn" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); margin-left: 10px;">
+                        ⏭️ Process Full Video
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="progressSection">
+            <h3>Processing...</h3>
+            <div class="spinner"></div>
+            <p id="progressText" style="text-align: center; margin-top: 10px; color: #666;">
+                Uploading and analyzing your video. This may take a few minutes...
+            </p>
+        </div>
+
+        <div class="error" id="errorSection"></div>
+
+        <div id="resultsSection">
+            <div class="results-header">
+                <h2>✅ Analysis Complete!</h2>
+                <p class="stats">Processed <strong id="numPairs"></strong> frame pairs</p>
+            </div>
+
+            <div class="plot-container">
+                <img id="plotImage" src="" alt="PIV Analysis Results">
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn download-btn" id="downloadBtn">
+                    💾 Download Results (.txt)
+                </button>
+                <button class="btn" id="newAnalysisBtn" style="margin-left: 10px;">
+                    🔄 New Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let currentVideoFilename = null;
+        let videoMetadata = null;
+
+        // File input handling
+        const videoInput = document.getElementById('videoInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const processBtn = document.getElementById('processBtn');
+        const skipClipBtn = document.getElementById('skipClipBtn');
+        const selectedFile = document.getElementById('selectedFile');
+        const uploadSection = document.getElementById('uploadSection');
+        const clipSection = document.getElementById('clipSection');
+        const videoPreview = document.getElementById('videoPreview');
+
+        videoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const fileName = this.files[0].name;
+                const fileSize = (this.files[0].size / (1024 * 1024)).toFixed(2);
+                selectedFile.textContent = `Selected: ${fileName} (${fileSize} MB)`;
+                selectedFile.style.display = 'block';
+                uploadBtn.style.display = 'inline-block';
+            } else {
+                selectedFile.style.display = 'none';
+                uploadBtn.style.display = 'none';
+            }
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                videoInput.files = e.dataTransfer.files;
+                videoInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Form submission - Upload video
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('video', videoInput.files[0]);
+
+            // Show progress
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('progressText').textContent = 'Uploading video...';
+            document.getElementById('errorSection').style.display = 'none';
+            uploadBtn.style.display = 'none';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Store video metadata
+                    currentJobId = data.job_id;
+                    currentVideoFilename = data.video_filename;
+                    videoMetadata = data;
+                    
+                    // Update video info
+                    document.getElementById('videoDuration').textContent = data.duration.toFixed(2);
+                    document.getElementById('videoFrames').textContent = data.frame_count;
+                    document.getElementById('videoFPS').textContent = data.fps.toFixed(2);
+                    
+                    // Set max values for time inputs
+                    document.getElementById('startTime').max = data.duration;
+                    document.getElementById('endTime').max = data.duration;
+                    document.getElementById('endTime').placeholder = `Max: ${data.duration.toFixed(2)}s`;
+                    
+                    // Load video preview
+                    videoPreview.src = '/video/' + data.video_filename;
+                    
+                    // Show clip section
+                    document.getElementById('progressSection').style.display = 'none';
+                    clipSection.style.display = 'block';
+                    uploadSection.style.display = 'none';
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                document.getElementById('errorSection').textContent = '❌ Error: ' + error.message;
+                document.getElementById('errorSection').style.display = 'block';
+                document.getElementById('progressSection').style.display = 'none';
+                uploadBtn.style.display = 'inline-block';
+            }
+        });
+
+        // Helper function to process video
+        async function processVideoWithSettings(startTime, endTime, maxFrames) {
+            // Show progress section
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('progressText').textContent = 'Processing video with PIV analysis. This may take a few minutes...';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            clipSection.style.display = 'none';
+
+            try {
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        job_id: currentJobId,
+                        video_filename: currentVideoFilename,
+                        original_filename: videoMetadata.filename,
+                        start_time: startTime,
+                        end_time: endTime,
+                        max_frames: maxFrames
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Show results
+                    document.getElementById('numPairs').textContent = data.num_pairs;
+                    document.getElementById('plotImage').src = 'data:image/png;base64,' + data.plot_image;
+                    document.getElementById('resultsSection').style.display = 'block';
+                    document.getElementById('progressSection').style.display = 'none';
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            } catch (error) {
+                document.getElementById('errorSection').textContent = '❌ Error: ' + error.message;
+                document.getElementById('errorSection').style.display = 'block';
+                document.getElementById('progressSection').style.display = 'none';
+                clipSection.style.display = 'block';
+            }
+        }
+
+        // Process button with clipping
+        processBtn.addEventListener('click', async function() {
+            const startTime = parseFloat(document.getElementById('startTime').value) || 0;
+            const endTimeInput = document.getElementById('endTime').value;
+            const endTime = endTimeInput ? parseFloat(endTimeInput) : null;
+            const maxFramesInput = document.getElementById('maxFrames').value;
+            const maxFrames = maxFramesInput ? parseInt(maxFramesInput) : null;
+            
+            // Validate times
+            if (endTime !== null && endTime <= startTime) {
+                alert('End time must be greater than start time');
+                return;
+            }
+            
+            await processVideoWithSettings(startTime, endTime, maxFrames);
+        });
+
+        // Skip clip button - process full video
+        skipClipBtn.addEventListener('click', async function() {
+            const maxFramesInput = document.getElementById('maxFrames').value;
+            const maxFrames = maxFramesInput ? parseInt(maxFramesInput) : null;
+            await processVideoWithSettings(0, null, maxFrames);
+        });
+
+        // Update video preview when time inputs change
+        document.getElementById('startTime').addEventListener('change', function() {
+            videoPreview.currentTime = parseFloat(this.value) || 0;
+        });
+
+        // Update current time display as video plays
+        videoPreview.addEventListener('timeupdate', function() {
+            document.getElementById('currentTimeDisplay').textContent = this.currentTime.toFixed(2);
+        });
+
+        // Set start time from current video position
+        document.getElementById('setStartBtn').addEventListener('click', function() {
+            const currentTime = videoPreview.currentTime;
+            document.getElementById('startTime').value = currentTime.toFixed(2);
+        });
+
+        // Set end time from current video position
+        document.getElementById('setEndBtn').addEventListener('click', function() {
+            const currentTime = videoPreview.currentTime;
+            document.getElementById('endTime').value = currentTime.toFixed(2);
+        });
+
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            if (currentJobId) {
+                window.location.href = '/download/' + currentJobId;
+            }
+        });
+
+        // New analysis button
+        document.getElementById('newAnalysisBtn').addEventListener('click', function() {
+            // Clean up old results
+            if (currentJobId) {
+                fetch('/cleanup/' + currentJobId, { method: 'POST' });
+            }
+            
+            // Reset form
+            document.getElementById('uploadForm').reset();
+            selectedFile.style.display = 'none';
+            uploadBtn.style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            clipSection.style.display = 'none';
+            uploadSection.style.display = 'block';
+            currentJobId = null;
+            currentVideoFilename = null;
+            videoMetadata = null;
+        });
+    </script>
+</body>
+</html>
